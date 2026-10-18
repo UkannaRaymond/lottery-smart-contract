@@ -17,7 +17,6 @@ contract Raffle is VRFConsumerBaseV2Plus {
     error Raffle__TransferFailed();
     error Raffle__RaffleNotOpen();
     error Raffle__UpkeepNotNeeded(uint256 balance, uint256 playersLength, uint256 raffleState);
-    error Raffle__InvalidRecipient();
 
     /* Type Declarations */
     enum RaffleState {
@@ -38,6 +37,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     uint256 private s_lastWinnerSelectionTime;
     address private s_recentWinner;
     RaffleState private s_raffleState;
+    uint256 private s_lastRequestId;
     uint256 private constant FEE_PERCENTAGE = 5;
     uint256 private constant PERCENTAGE_DENOMINATOR = 100;
 
@@ -103,6 +103,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         )
     {
         // Check to see if enough time has passed since the last winner selection
+        // forge-lint: disable-next-line(block-timestamp)
         bool timeHasPassed = (block.timestamp - s_lastWinnerSelectionTime >= i_interval);
         bool isOpen = s_raffleState == RaffleState.OPEN;
         bool hasBalance = address(this).balance > 0;
@@ -136,7 +137,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
                 VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
             )
         });
-        s_vrfCoordinator.requestRandomWords(request);
+        s_lastRequestId = s_vrfCoordinator.requestRandomWords(request);
     }
 
     function fulfillRandomWords(
@@ -165,11 +166,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         emit WinnerPicked(recentWinner);
     }
 
-    function withdrawWinnings(address payable recipient) external {
-        if (recipient == address(0)) {
-            revert Raffle__InvalidRecipient();
-        }
-
+    function withdrawWinnings() external {
         uint256 amount = s_pendingWinnings[msg.sender];
 
         if (amount == 0) {
@@ -178,7 +175,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
         s_pendingWinnings[msg.sender] = 0;
 
-        (bool success,) = recipient.call{value: amount}("");
+        (bool success,) = msg.sender.call{value: amount}("");
 
         if (!success) {
             revert Raffle__TransferFailed();
@@ -191,6 +188,18 @@ contract Raffle is VRFConsumerBaseV2Plus {
      */
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
+    }
+
+    function getRaffleState() external view returns (RaffleState) {
+        return s_raffleState;
+    }
+
+    function getPlayer(uint256 indexOfPlayers) external view returns (address) {
+        return s_players[indexOfPlayers];
+    }
+
+    function getLastRequestId() external view returns (uint256) {
+        return s_lastRequestId;
     }
 
     function getPendingWinnings(address player) external view returns (uint256) {
