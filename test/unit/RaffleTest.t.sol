@@ -78,7 +78,7 @@ contract RaffleTest is Test {
         vm.warp(block.timestamp + interval + 1);
         vm.roll(block.number + 1);
 
-        (bool upKeepNeeded, ) = raffle.checkUpkeep("");
+        (bool upKeepNeeded,) = raffle.checkUpkeep("");
 
         assert(!upKeepNeeded);
     }
@@ -90,7 +90,32 @@ contract RaffleTest is Test {
         vm.roll(block.number + 1);
         raffle.performUpkeep("");
 
-        (bool upKeepNeeded, ) = raffle.checkUpkeep("");
+        (bool upKeepNeeded,) = raffle.checkUpkeep("");
         assert(!upKeepNeeded);
+    }
+
+    function testPerformUpKeepCanOnlyRunIfCheckUpKeepIsTrue() public {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        raffle.performUpkeep("");
+    }
+
+    function testPerformUpkeepRevertIfCheckUpkeepIsFalse() public {
+        uint256 currentBalance = 0;
+        uint256 numberPlayers = 0;
+        Raffle.RaffleState rState = raffle.getRaffleState();
+
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        currentBalance = currentBalance + entranceFee;
+        numberPlayers = 1;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Raffle.Raffle__UpkeepNotNeeded.selector, currentBalance, numberPlayers, rState)
+        );
+        raffle.performUpkeep("");
     }
 }
