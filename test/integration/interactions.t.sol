@@ -3,11 +3,7 @@ pragma solidity ^0.8.37;
 
 import {Test} from "forge-std/Test.sol";
 import {HelperConfig, CodeConstants} from "script/HelperConfig.s.sol";
-import {
-    CreateSubscription,
-    FundSubscription,
-    AddConsumer
-} from "script/Interactions.s.sol";
+import {CreateSubscription, FundSubscription, AddConsumer} from "script/Interactions.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract InteractionsTest is Test, CodeConstants {
@@ -37,8 +33,8 @@ contract InteractionsTest is Test, CodeConstants {
             return;
         }
 
-        (uint256 subId, address returnedCoordinator) = createSubscriptionScript
-            .createSubscription(vrfCoordinator, account);
+        (uint256 subId, address returnedCoordinator) =
+            createSubscriptionScript.createSubscription(vrfCoordinator, account);
 
         assertEq(returnedCoordinator, vrfCoordinator);
         assertGt(subId, 0);
@@ -58,11 +54,11 @@ contract InteractionsTest is Test, CodeConstants {
             return;
         }
 
-        (uint256 subId, ) = createSubscriptionScript.createSubscription(vrfCoordinator, account);
+        (uint256 subId,) = createSubscriptionScript.createSubscription(vrfCoordinator, account);
 
         fundSubscriptionScript.fundSubscription(vrfCoordinator, subId, linkToken, account);
 
-        (uint96 balance, uint96 nativeBalance, , , ) = VRFCoordinatorV2_5Mock(vrfCoordinator).getSubscription(subId);
+        (uint96 balance, uint96 nativeBalance,,,) = VRFCoordinatorV2_5Mock(vrfCoordinator).getSubscription(subId);
         assertGt(uint256(balance), 0);
         assertEq(uint256(nativeBalance), 0);
     }
@@ -73,7 +69,7 @@ contract InteractionsTest is Test, CodeConstants {
         }
 
         address consumer = address(0xBEEF);
-        (uint256 subId, ) = createSubscriptionScript.createSubscription(vrfCoordinator, account);
+        (uint256 subId,) = createSubscriptionScript.createSubscription(vrfCoordinator, account);
 
         addConsumerScript.addConsumer(consumer, vrfCoordinator, subId, account);
 
