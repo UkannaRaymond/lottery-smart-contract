@@ -15,5 +15,8 @@ fs_permissions = [
     { access = "read", path = "./reports" },
 ]
 
-ignored_error_codes = [2424, 5574, 3860, 6335]
+[fuzz]
+runs = 256
+
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
